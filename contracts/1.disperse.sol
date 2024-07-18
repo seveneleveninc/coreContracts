@@ -1,5 +1,5 @@
 // Clone of https://etherscan.io/address/0xD152f549545093347A162Dce210e7293f1452150#code
-pragma solidity ^0.4.25;
+pragma solidity 0.8.26;
 
 interface IERC20 {
     function transfer(address to, uint256 value) external returns (bool);
@@ -7,24 +7,24 @@ interface IERC20 {
 }
 
 contract Disperse {
-    function disperseEther(address[] recipients, uint256[] values) external payable {
+    function disperseEther(address payable[] calldata recipients, uint256[] calldata values) external payable {
         for (uint256 i = 0; i < recipients.length; i++)
             recipients[i].transfer(values[i]);
         uint256 balance = address(this).balance;
         if (balance > 0)
-            msg.sender.transfer(balance);
+            payable(msg.sender).transfer(balance);
     }
 
-    function disperseToken(IERC20 token, address[] recipients, uint256[] values) external {
+    function disperseToken(IERC20 token, address[] calldata recipients, uint256[] calldata values) external {
         uint256 total = 0;
         for (uint256 i = 0; i < recipients.length; i++)
             total += values[i];
         require(token.transferFrom(msg.sender, address(this), total));
-        for (i = 0; i < recipients.length; i++)
+        for (uint256 i = 0; i < recipients.length; i++)
             require(token.transfer(recipients[i], values[i]));
     }
 
-    function disperseTokenSimple(IERC20 token, address[] recipients, uint256[] values) external {
+    function disperseTokenSimple(IERC20 token, address[] calldata recipients, uint256[] calldata values) external {
         for (uint256 i = 0; i < recipients.length; i++)
             require(token.transferFrom(msg.sender, recipients[i], values[i]));
     }
