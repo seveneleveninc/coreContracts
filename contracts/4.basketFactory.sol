@@ -47,14 +47,14 @@ contract BasketFactory {
     /**********************************************************************************************
     ** Main storage variables:
     ** - baskets: A mapping from basket ID to BasketInfo, storing all created baskets
-    ** - basketCount: Total number of baskets created, also used as the next basket ID
+    ** - nextBasketID: Total number of baskets created, also used as the next basket ID
     ** - endorsedBaskets: An array of IDs of endorsed baskets for efficient retrieval
     ** 
     ** These variables form the core state of the contract, allowing for creation, tracking,
     ** and retrieval of baskets.
     **********************************************************************************************/
     mapping(uint256 => BasketInfo) public baskets;
-    uint256 public basketCount;
+    uint256 public nextBasketID = 1;
     uint256[] public endorsedBaskets;
 
     /**********************************************************************************************
@@ -141,7 +141,7 @@ contract BasketFactory {
     **    - Verifies that allocations sum to 100% (10000 basis points)
     ** 2. Creates a new BasketInfo struct with the provided data and some defaults
     ** 3. Stores the new basket in the baskets mapping
-    ** 4. Increments the basketCount
+    ** 4. Increments the nextBasketID
     ** 5. Emits a BasketCreated event
     ** 
     ** This is the core function for basket creation, allowing users to define custom asset allocations.
@@ -160,8 +160,8 @@ contract BasketFactory {
         }
         require(totalAllocation == 10000, "Total allocation must be 10000 (100%)");
 
-        uint256 basketId = basketCount;
-        basketCount++;
+        uint256 basketId = nextBasketID;
+        nextBasketID++;
 
         baskets[basketId] = BasketInfo({
             name: _name,
@@ -196,7 +196,7 @@ contract BasketFactory {
     ** This function allows for community-driven quality assessment of baskets.
     **********************************************************************************************/
     function rateBasket(uint256 _basketId, uint256 _rating) external {
-        require(_basketId < basketCount, "Basket does not exist");
+        require(_basketId < nextBasketID, "Basket does not exist");
         require(_rating >= 1 && _rating <= 5, "Rating must be between 1 and 5");
 
         BasketInfo storage basket = baskets[_basketId];
@@ -229,7 +229,7 @@ contract BasketFactory {
     ** This function allows for curation of baskets, highlighting those deemed high-quality or trustworthy.
     **********************************************************************************************/
     function endorseBasket(uint256 _basketId, bool _endorsed) external onlyOwner {
-        require(_basketId < basketCount, "Basket does not exist");
+        require(_basketId < nextBasketID, "Basket does not exist");
         BasketInfo storage basket = baskets[_basketId];
         
         if (_endorsed && !basket.endorsed) {
@@ -259,7 +259,7 @@ contract BasketFactory {
     ** This allows external contracts or off-chain applications to fetch complete basket details.
     **********************************************************************************************/
     function getBasketInfo(uint256 _basketId) external view returns (BasketInfo memory) {
-        require(_basketId < basketCount, "Basket does not exist");
+        require(_basketId < nextBasketID, "Basket does not exist");
         return baskets[_basketId];
     }
 
@@ -280,11 +280,11 @@ contract BasketFactory {
     function getBasketsByPage(uint256 _page, uint256 _pageSize) external view returns (BasketInfo[] memory) {
         require(_pageSize > 0, "Page size must be greater than 0");
         uint256 startIndex = _page * _pageSize;
-        require(startIndex < basketCount, "Page out of range");
+        require(startIndex < nextBasketID, "Page out of range");
 
         uint256 endIndex = startIndex + _pageSize;
-        if (endIndex > basketCount) {
-            endIndex = basketCount;
+        if (endIndex > nextBasketID) {
+            endIndex = nextBasketID;
         }
 
         BasketInfo[] memory pageBaskets = new BasketInfo[](endIndex - startIndex);

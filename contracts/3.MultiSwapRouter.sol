@@ -161,6 +161,11 @@ contract MultiSwapRouter {
         uint256 amountOut,
         DEX dex
     );
+    event BasketSwap(
+        address indexed user,
+        uint256 indexed baskedID
+    );
+
 
     /**********************************************************************************************
     ** Constructor: Initializes the contract with necessary addresses
@@ -224,7 +229,7 @@ contract MultiSwapRouter {
     ** - Emits Swap events for each successful complete swap
     ** - Refunds any unused ETH
     **********************************************************************************************/
-    function multicall(SwapParams[] calldata params) external payable {
+    function multicall(SwapParams[] calldata params, uint256 basketID) external payable {
         uint256 ethValue = msg.value;
         
         for (uint i = 0; i < params.length; i++) {
@@ -267,6 +272,10 @@ contract MultiSwapRouter {
         
         if (ethValue > 0) {
             payable(msg.sender).transfer(ethValue);
+        }
+
+        if (basketID > 0) {
+            emit BasketSwap(msg.sender, basketID);
         }
     }
 
